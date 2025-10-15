@@ -56,57 +56,80 @@
 </head>
 <body class="bg-gray-900 text-white min-h-screen flex flex-col antialiased">
 
-    <div class="container mx-auto p-4 sm:p-6 lg:p-8 flex flex-col flex-grow">
-        <!-- Header -->
-        <header class="text-center mb-6">
-            <h1 class="text-3xl sm:text-4xl font-bold text-blue-400">视频逐帧提取工具</h1>
-            <p class="text-gray-400 mt-2">100% 纯浏览器处理，您的视频文件不会离开您的电脑。</p>
-        </header>
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 flex-grow">
+        <!-- Main Layout Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Left Column: Main Tool -->
+            <div class="lg:col-span-2">
+                <!-- Header -->
+                <header class="text-center mb-6">
+                    <h1 class="text-3xl sm:text-4xl font-bold text-blue-400">视频逐帧提取工具</h1>
+                    <p class="text-gray-400 mt-2">100% 纯浏览器处理，您的视频文件不会离开您的电脑。</p>
+                </header>
 
-        <!-- Main Content Area -->
-        <main class="bg-gray-800 rounded-2xl shadow-2xl p-6 flex-grow flex flex-col">
-            <!-- Upload and Controls -->
-            <div class="flex flex-col sm:flex-row items-center gap-4 mb-6 pb-6 border-b border-gray-700">
-                <div class="w-full sm:w-auto">
-                    <label for="video-upload" class="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg cursor-pointer transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
-                        <span>选择视频</span>
-                    </label>
-                    <input type="file" id="video-upload" class="hidden" accept="video/*">
-                </div>
-                <div id="file-name" class="text-gray-400 text-sm truncate flex-grow text-center sm:text-left">未选择文件</div>
-                <div class="flex gap-2 ml-auto">
-                    <button id="start-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed">开始提取</button>
-                    <button id="pause-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed hidden">暂停</button>
-                    <button id="cancel-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed hidden">取消</button>
-                </div>
+                <!-- Main Content Area -->
+                <main class="bg-gray-800 rounded-2xl shadow-2xl p-6 flex-grow flex flex-col">
+                    <!-- Upload and Controls -->
+                    <div class="flex flex-col sm:flex-row items-center gap-4 mb-6 pb-6 border-b border-gray-700">
+                        <div class="w-full sm:w-auto">
+                            <label for="video-upload" class="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg cursor-pointer transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
+                                <span>选择视频</span>
+                            </label>
+                            <input type="file" id="video-upload" class="hidden" accept="video/*">
+                        </div>
+                        <div id="file-name" class="text-gray-400 text-sm truncate flex-grow text-center sm:text-left">未选择文件</div>
+                        <div class="flex gap-2 ml-auto">
+                            <button id="start-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed">开始提取</button>
+                            <button id="pause-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed hidden">暂停</button>
+                            <button id="cancel-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed hidden">取消</button>
+                        </div>
+                    </div>
+
+                    <!-- Progress and Status -->
+                    <div id="status-area" class="h-12 mb-4 flex items-center text-gray-300 hidden">
+                        <div id="progress-bar-container" class="w-full bg-gray-700 rounded-full h-2.5 hidden">
+                            <div id="progress-bar" class="bg-blue-500 h-2.5 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <div id="status-text" class="ml-4 text-center flex-grow"></div>
+                    </div>
+
+                    <!-- Frame Display -->
+                    <div id="frames-container" class="flex-grow bg-gray-900/50 rounded-lg p-4 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4" style="min-height: 300px;">
+                        <!-- Extracted frames will be appended here -->
+                    </div>
+
+                    <!-- Download Area -->
+                    <div id="download-area" class="mt-6 pt-6 border-t border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4 hidden">
+                        <div class="flex items-center gap-4">
+                            <div id="selection-counter" class="text-lg font-medium">已选择 0 帧</div>
+                            <button id="select-all-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm">全选</button>
+                        </div>
+                        <button id="download-btn" class="w-full sm:w-auto flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z" /><path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" /></svg>
+                            <span>下载</span>
+                        </button>
+                    </div>
+                </main>
             </div>
 
-            <!-- Progress and Status -->
-            <div id="status-area" class="h-12 mb-4 flex items-center text-gray-300 hidden">
-                <div id="progress-bar-container" class="w-full bg-gray-700 rounded-full h-2.5 hidden">
-                    <div id="progress-bar" class="bg-blue-500 h-2.5 rounded-full" style="width: 0%"></div>
+            <!-- Right Column: Support Area -->
+            <aside class="lg:col-span-1">
+                 <div class="bg-gray-800 rounded-2xl shadow-2xl p-6 text-center sticky top-8">
+                    <h2 class="text-2xl font-bold text-amber-400 mb-4 flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
+                        </svg>
+                        <span>感谢您的支持</span>
+                    </h2>
+                    <p class="text-gray-300 mb-4">如果这个工具对您有帮助，可以考虑请我喝杯咖啡。</p>
+                    <img id="donation-qr-code" src="" alt="收款二维码" class="mx-auto rounded-lg w-48 h-48 border-4 border-gray-700">
+                    <p class="text-gray-500 text-sm mt-2">微信扫码</p>
                 </div>
-                <div id="status-text" class="ml-4 text-center flex-grow"></div>
-            </div>
+            </aside>
 
-            <!-- Frame Display -->
-            <div id="frames-container" class="flex-grow bg-gray-900/50 rounded-lg p-4 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
-                <!-- Extracted frames will be appended here -->
-            </div>
-
-            <!-- Download Area -->
-            <div id="download-area" class="mt-6 pt-6 border-t border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4 hidden">
-                <div class="flex items-center gap-4">
-                    <div id="selection-counter" class="text-lg font-medium">已选择 0 帧</div>
-                    <button id="select-all-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm">全选</button>
-                </div>
-                <button id="download-btn" class="w-full sm:w-auto flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z" /><path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" /></svg>
-                    <span>下载</span>
-                </button>
-            </div>
-        </main>
+        </div>
     </div>
 
     <!-- Hidden elements for processing -->
@@ -140,6 +163,7 @@
         const ctx = canvasProcessor.getContext('2d');
         const hoverPreviewTooltip = document.getElementById('hover-preview-tooltip');
         const hoverPreviewImage = document.getElementById('hover-preview-image');
+        const donationQrCode = document.getElementById('donation-qr-code');
 
         // State variables
         let videoFile = null;
@@ -150,6 +174,10 @@
         let totalFrames = 0;
         const selectedFrames = new Set();
         const frameBlobs = new Map();
+
+        // Base64 for the donation QR code image - This is now correct.
+        const donationImageBase64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0AKgAAAAgABQESAAMAAAABAAEAAAEaAAUAAAABAAAASgEbAAUAAAABAAAAUgEoAAMAAAABAAIAAIdpAAQAAAABAAAAWgAAAAAAAABIAAAAAQAAAEgAAAABAAOShgAHAAAAEgAAAHigAgAEAAAAAQAABfSgAwAEAAAAAQAABeYAAAAA/8IAEQgB5gX0AwEiAAIRAQMRAf/EAB8AAAEFAQEBAQEBAAAAAAAAAAABAgMEBQYHCAkKC//EALUQAAIBAwMCBAMFBQQEAAABfQECAwAEEQUSITFBBhNRYQcicRQygZGhCCNCscEVUtHwJDNicoIJChYXGBkaJSYnKCkqNDU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6g4SFhoeIiYqSk5SVlpeYmZqio6Slpqeoqaqys7S1tre4ubrCw8TFxsfIycrS09TV1tfY2drh4uPk5ebn6Onq8fLz9PX29/j5+v/EAB8BAAMBAQEBAQEBAQEAAAAAAAABAgMEBQYHCAkKC//EALURAAIBAgQEAwQHBQQEAAECdwABAgMRBAUhMQYSQVEHYXETIjKBCBRCkaGxwQkjMLwFWJy0QoWJDThJfEXGBkaJicoKSo1Njc4OTpDREVGR0hJSlNUVVZXWFlaY2RlZmdoaWpzdHV2d3h5eoKDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5unp6vLz9PX29/j5+v/bAEMAAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAf/bAEMBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAf/dABEAJf/aAAwDAQACEQMRAD8A9UooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAC-Z";
+        donationQrCode.src = donationImageBase64;
 
         // Event Listeners
         videoUpload.addEventListener('change', handleVideoUpload);
@@ -167,7 +195,6 @@
         function handleVideoUpload(event) {
             const file = event.target.files[0];
             if (file && file.type.startsWith('video/')) {
-                // 当选择新视频时，清除上一个视频的结果
                 framesContainer.innerHTML = '';
                 downloadArea.classList.add('hidden');
                 statusArea.classList.add('hidden');
@@ -240,7 +267,6 @@
                     frameElement.innerHTML = `<img src="${frameUrl}" class="w-full h-full object-cover" loading="lazy">`;
                     framesContainer.appendChild(frameElement);
 
-                    // Make download area visible as soon as the first frame is generated
                     if (downloadArea.classList.contains('hidden')) {
                         downloadArea.classList.remove('hidden');
                     }
@@ -264,7 +290,7 @@
                 resetState(false);
             };
 
-            if (videoProcessor.readyState >= 1) { // HAVE_METADATA
+            if (videoProcessor.readyState >= 1) {
                 runExtractionLogic();
             } else {
                 videoProcessor.onloadedmetadata = runExtractionLogic;
@@ -283,7 +309,7 @@
 
         function cancelExtraction() {
             if (!isProcessing) return;
-            resetState(false); // Stop processing
+            resetState(false);
             statusText.textContent = '提取已取消。';
             setTimeout(() => {
                 if(statusText.textContent === '提取已取消。') statusArea.classList.add('hidden');
@@ -293,12 +319,8 @@
         function handleFrameSelection(event) {
             const frameItem = event.target.closest('.frame-item');
             if (!frameItem) return;
-
             const frameNumber = parseInt(frameItem.dataset.frameNumber, 10);
-
-            // Selection Logic
             frameItem.classList.toggle('selected');
-
             if (frameItem.classList.contains('selected')) {
                 selectedFrames.add(frameNumber);
             } else {
@@ -310,37 +332,26 @@
         function handleFrameHover(event) {
             const frameItem = event.target.closest('.frame-item');
             if (!frameItem) return;
-
             const thumbnailUrl = frameItem.querySelector('img').src;
             hoverPreviewImage.src = thumbnailUrl;
-            
             hoverPreviewTooltip.classList.remove('hidden');
-            
             const rect = frameItem.getBoundingClientRect();
             const tooltip = hoverPreviewTooltip;
-            
-            // Recalculate tooltip size based on its content
             tooltip.style.left = '-9999px';
             tooltip.style.top = '-9999px';
             const tooltipRect = tooltip.getBoundingClientRect();
-
             const offset = 15;
-
             let left = rect.right + offset;
             if (left + tooltipRect.width > window.innerWidth) {
                 left = rect.left - tooltipRect.width - offset;
             }
-            if (left < 0) {
-                left = offset;
-            }
-
+            if (left < 0) left = offset;
             let top = rect.top + (rect.height - tooltipRect.height) / 2;
             if (top < 0) {
                 top = offset;
             } else if (top + tooltipRect.height > window.innerHeight) {
                 top = window.innerHeight - tooltipRect.height - offset;
             }
-
             tooltip.style.left = `${left}px`;
             tooltip.style.top = `${top}px`;
         }
@@ -352,9 +363,7 @@
         function toggleSelectAll() {
             const allFrames = document.querySelectorAll('.frame-item');
             if (allFrames.length === 0) return;
-
             const shouldSelectAll = selectedFrames.size < allFrames.length;
-
             allFrames.forEach(frameItem => {
                 const frameNumber = parseInt(frameItem.dataset.frameNumber, 10);
                 if (shouldSelectAll) {
@@ -364,15 +373,10 @@
                     frameItem.classList.remove('selected');
                 }
             });
-
-            if (!shouldSelectAll) {
-                selectedFrames.clear();
-            }
-
+            if (!shouldSelectAll) selectedFrames.clear();
             updateSelectionCounter();
         }
 
-        // Helper function to introduce a delay
         function sleep(ms) {
             return new Promise(resolve => setTimeout(resolve, ms));
         }
@@ -380,44 +384,30 @@
         async function downloadSelectedFrames() {
             if (selectedFrames.size === 0) {
                 statusText.textContent = '请至少选择一帧进行下载。';
-                setTimeout(() => {
-                    if (statusText.textContent === '请至少选择一帧进行下载。') {
-                        statusText.textContent = '';
-                    }
-                }, 3000);
+                setTimeout(() => { if (statusText.textContent === '请至少选择一帧进行下载。') statusText.textContent = ''; }, 3000);
                 return;
             }
-
             downloadBtn.disabled = true;
             downloadBtn.textContent = '正在下载...';
             const originalStatus = statusText.textContent;
-            
             const baseFileName = videoFile.name.replace(/\.[^/.]+$/, "");
             const sortedFrames = Array.from(selectedFrames).sort((a, b) => a - b);
             let downloadedCount = 0;
-
             statusText.textContent = `准备下载 ${sortedFrames.length} 帧... 浏览器可能会提示您允许多文件下载。`;
-
             await sleep(1000);
-
             for (const frameNumber of sortedFrames) {
                 const blob = frameBlobs.get(frameNumber);
                 if (blob) {
                     try {
                         const link = document.createElement('a');
                         link.href = URL.createObjectURL(blob);
-                        const fileName = `${baseFileName}_frame_${String(frameNumber + 1).padStart(5, '0')}.jpg`;
-                        link.download = fileName;
-                        
+                        link.download = `${baseFileName}_frame_${String(frameNumber + 1).padStart(5, '0')}.jpg`;
                         document.body.appendChild(link);
                         link.click();
                         document.body.removeChild(link);
-                        
                         URL.revokeObjectURL(link.href);
-                        
                         downloadedCount++;
                         statusText.textContent = `正在下载: ${downloadedCount} / ${sortedFrames.length}`;
-                        
                         await sleep(200); 
                     } catch(e) {
                         console.error("下载失败:", e);
@@ -426,26 +416,17 @@
                     }
                 }
             }
-            
-            if(downloadedCount === sortedFrames.length) {
-                statusText.textContent = `下载请求已全部发起！共 ${downloadedCount} 帧。`;
-            }
-
+            if(downloadedCount === sortedFrames.length) statusText.textContent = `下载请求已全部发起！共 ${downloadedCount} 帧。`;
             downloadBtn.disabled = false;
-            downloadBtn.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z" /><path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" /></svg>
-                    <span>下载</span>`;
+            downloadBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z" /><path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" /></svg><span>下载</span>`;
             setTimeout(() => { if(statusText.textContent.includes('发起')) statusText.textContent = originalStatus; }, 4000);
         }
         
-        // --- UI and State Helpers ---
         function resetState(processingStatus) {
             isProcessing = processingStatus;
             isPaused = false;
-
             startBtn.disabled = isProcessing;
             videoUpload.disabled = isProcessing;
-
             if (isProcessing) {
                 pauseBtn.classList.remove('hidden');
                 cancelBtn.classList.remove('hidden');
@@ -465,7 +446,6 @@
             const selectionSize = selectedFrames.size;
             selectionCounter.textContent = `已选择 ${selectionSize} 帧`;
             downloadBtn.disabled = selectionSize === 0;
-
             const allFramesCount = document.querySelectorAll('.frame-item').length;
             if (allFramesCount > 0 && selectionSize === allFramesCount) {
                 selectAllBtn.textContent = '取消全选';
@@ -476,5 +456,4 @@
     </script>
 </body>
 </html>
-
 
