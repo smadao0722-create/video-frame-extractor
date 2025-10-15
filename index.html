@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频逐帧提取工具 (100%离线)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+        }
+        .frame-item {
+            cursor: pointer;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .frame-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+        }
+        .frame-item.selected {
+            outline: 3px solid #3B82F6;
+            outline-offset: 2px;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.7);
+        }
+        .frame-item.selected::after {
+            content: '✓';
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 24px;
+            height: 24px;
+            background-color: #3B82F6;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #2d3748;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4a5568;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #718096;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col antialiased">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 flex flex-col flex-grow">
+        <!-- Header -->
+        <header class="text-center mb-6">
+            <h1 class="text-3xl sm:text-4xl font-bold text-blue-400">视频逐帧提取工具</h1>
+            <p class="text-gray-400 mt-2">100% 纯浏览器处理，您的视频文件不会离开您的电脑。</p>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="bg-gray-800 rounded-2xl shadow-2xl p-6 flex-grow flex flex-col">
+            <!-- Upload and Controls -->
+            <div class="flex flex-col sm:flex-row items-center gap-4 mb-6 pb-6 border-b border-gray-700">
+                <div class="w-full sm:w-auto">
+                    <label for="video-upload" class="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg cursor-pointer transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
+                        <span>选择视频</span>
+                    </label>
+                    <input type="file" id="video-upload" class="hidden" accept="video/*">
+                </div>
+                <div id="file-name" class="text-gray-400 text-sm truncate flex-grow text-center sm:text-left">未选择文件</div>
+                <div class="flex gap-2 ml-auto">
+                    <button id="start-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed">开始提取</button>
+                    <button id="pause-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed hidden">暂停</button>
+                    <button id="cancel-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed hidden">取消</button>
+                </div>
+            </div>
+
+            <!-- Progress and Status -->
+            <div id="status-area" class="h-12 mb-4 flex items-center text-gray-300 hidden">
+                <div id="progress-bar-container" class="w-full bg-gray-700 rounded-full h-2.5 hidden">
+                    <div id="progress-bar" class="bg-blue-500 h-2.5 rounded-full" style="width: 0%"></div>
+                </div>
+                <div id="status-text" class="ml-4 text-center flex-grow"></div>
+            </div>
+
+            <!-- Frame Display -->
+            <div id="frames-container" class="flex-grow bg-gray-900/50 rounded-lg p-4 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+                <!-- Extracted frames will be appended here -->
+            </div>
+
+            <!-- Download Area -->
+            <div id="download-area" class="mt-6 pt-6 border-t border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4 hidden">
+                <div class="flex items-center gap-4">
+                    <div id="selection-counter" class="text-lg font-medium">已选择 0 帧</div>
+                    <button id="select-all-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm">全选</button>
+                </div>
+                <button id="download-btn" class="w-full sm:w-auto flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z" /><path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" /></svg>
+                    <span>下载</span>
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Hidden elements for processing -->
+    <video id="video-processor" class="hidden" preload="metadata" muted></video>
+    <canvas id="canvas-processor" class="hidden"></canvas>
+    
+    <!-- Hover Preview Tooltip -->
+    <div id="hover-preview-tooltip" class="hidden fixed z-50 p-1 bg-black/80 backdrop-blur-sm rounded-lg shadow-2xl pointer-events-none transition-opacity duration-200">
+        <img id="hover-preview-image" src="" alt="Hover Preview" class="rounded" style="max-width: 480px; max-height: 360px;">
+    </div>
+
+
+    <script>
+        // DOM Elements
+        const videoUpload = document.getElementById('video-upload');
+        const fileNameDisplay = document.getElementById('file-name');
+        const startBtn = document.getElementById('start-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const cancelBtn = document.getElementById('cancel-btn');
+        const statusArea = document.getElementById('status-area');
+        const progressBarContainer = document.getElementById('progress-bar-container');
+        const progressBar = document.getElementById('progress-bar');
+        const statusText = document.getElementById('status-text');
+        const framesContainer = document.getElementById('frames-container');
+        const downloadArea = document.getElementById('download-area');
+        const selectionCounter = document.getElementById('selection-counter');
+        const downloadBtn = document.getElementById('download-btn');
+        const selectAllBtn = document.getElementById('select-all-btn');
+        const videoProcessor = document.getElementById('video-processor');
+        const canvasProcessor = document.getElementById('canvas-processor');
+        const ctx = canvasProcessor.getContext('2d');
+        const hoverPreviewTooltip = document.getElementById('hover-preview-tooltip');
+        const hoverPreviewImage = document.getElementById('hover-preview-image');
+
+        // State variables
+        let videoFile = null;
+        let videoObjectUrl = null;
+        let isProcessing = false;
+        let isPaused = false;
+        let currentFrame = 0;
+        let totalFrames = 0;
+        const selectedFrames = new Set();
+        const frameBlobs = new Map();
+
+        // Event Listeners
+        videoUpload.addEventListener('change', handleVideoUpload);
+        startBtn.addEventListener('click', startExtraction);
+        pauseBtn.addEventListener('click', togglePause);
+        cancelBtn.addEventListener('click', cancelExtraction);
+        framesContainer.addEventListener('click', handleFrameSelection);
+        framesContainer.addEventListener('mouseover', handleFrameHover);
+        framesContainer.addEventListener('mouseleave', handleFrameLeave);
+        downloadBtn.addEventListener('click', downloadSelectedFrames);
+        selectAllBtn.addEventListener('click', toggleSelectAll);
+
+        // --- Core Functions ---
+
+        function handleVideoUpload(event) {
+            const file = event.target.files[0];
+            if (file && file.type.startsWith('video/')) {
+                // 当选择新视频时，清除上一个视频的结果
+                framesContainer.innerHTML = '';
+                downloadArea.classList.add('hidden');
+                statusArea.classList.add('hidden');
+                selectedFrames.clear();
+                frameBlobs.clear();
+                
+                videoFile = file;
+                fileNameDisplay.textContent = file.name;
+                startBtn.disabled = false;
+                if (videoObjectUrl) {
+                    URL.revokeObjectURL(videoObjectUrl);
+                }
+                videoObjectUrl = URL.createObjectURL(videoFile);
+                videoProcessor.src = videoObjectUrl;
+            }
+        }
+
+        async function startExtraction() {
+            if (!videoFile || isProcessing) return;
+
+            resetState(true);
+            statusArea.classList.remove('hidden');
+            progressBarContainer.classList.remove('hidden');
+            progressBar.style.width = '0%';
+            statusText.textContent = '正在初始化...';
+            framesContainer.innerHTML = '';
+
+            const runExtractionLogic = async () => {
+                totalFrames = Math.floor(videoProcessor.duration);
+                if (!totalFrames || totalFrames === Infinity) {
+                    statusText.textContent = '无法读取视频时长。请尝试其他视频文件。';
+                    resetState(false);
+                    return;
+                }
+                statusText.textContent = `准备就绪... 共 ${totalFrames} 帧。`;
+
+                for (currentFrame = 0; currentFrame < totalFrames; currentFrame++) {
+                    if (!isProcessing) break; 
+
+                    while (isPaused) {
+                        if (!isProcessing) break;
+                        await sleep(100);
+                    }
+                    if (!isProcessing) break;
+
+                    videoProcessor.currentTime = currentFrame + 0.5;
+                    
+                    await new Promise(resolve => {
+                        videoProcessor.onseeked = async () => {
+                            await sleep(50); 
+                            resolve();
+                        }
+                    });
+
+                    if (!isProcessing) break;
+
+                    canvasProcessor.width = videoProcessor.videoWidth;
+                    canvasProcessor.height = videoProcessor.videoHeight;
+                    ctx.drawImage(videoProcessor, 0, 0, canvasProcessor.width, canvasProcessor.height);
+                    
+                    const blob = await new Promise(resolve => canvasProcessor.toBlob(resolve, 'image/jpeg', 0.9));
+                    if (!isProcessing) break; 
+
+                    frameBlobs.set(currentFrame, blob);
+
+                    const frameUrl = URL.createObjectURL(blob);
+                    const frameElement = document.createElement('div');
+                    frameElement.className = 'frame-item relative aspect-video bg-gray-700 rounded-md overflow-hidden';
+                    frameElement.dataset.frameNumber = currentFrame;
+                    frameElement.innerHTML = `<img src="${frameUrl}" class="w-full h-full object-cover" loading="lazy">`;
+                    framesContainer.appendChild(frameElement);
+
+                    // Make download area visible as soon as the first frame is generated
+                    if (downloadArea.classList.contains('hidden')) {
+                        downloadArea.classList.remove('hidden');
+                    }
+
+                    const progress = ((currentFrame + 1) / totalFrames) * 100;
+                    progressBar.style.width = `${progress}%`;
+                    statusText.textContent = `正在提取: ${currentFrame + 1} / ${totalFrames}`;
+                }
+
+                if (isProcessing) { 
+                    statusText.textContent = `提取完成！共提取 ${frameBlobs.size} 帧。`;
+                    progressBarContainer.classList.add('hidden'); 
+                } else {
+                    statusText.textContent = '提取已取消。';
+                }
+                resetState(false);
+            };
+
+            videoProcessor.onerror = () => {
+                statusText.textContent = '加载视频失败。请检查文件格式或选择其他文件。';
+                resetState(false);
+            };
+
+            if (videoProcessor.readyState >= 1) { // HAVE_METADATA
+                runExtractionLogic();
+            } else {
+                videoProcessor.onloadedmetadata = runExtractionLogic;
+            }
+        }
+        
+        function togglePause() {
+            isPaused = !isPaused;
+            pauseBtn.textContent = isPaused ? '继续' : '暂停';
+            if (isPaused) {
+                 statusText.textContent = `已暂停在第 ${currentFrame + 1} 帧。`;
+            } else {
+                 statusText.textContent = `正在提取: ${currentFrame + 1} / ${totalFrames}`;
+            }
+        }
+
+        function cancelExtraction() {
+            if (!isProcessing) return;
+            resetState(false); // Stop processing
+            statusText.textContent = '提取已取消。';
+            setTimeout(() => {
+                if(statusText.textContent === '提取已取消。') statusArea.classList.add('hidden');
+            }, 3000);
+        }
+
+        function handleFrameSelection(event) {
+            const frameItem = event.target.closest('.frame-item');
+            if (!frameItem) return;
+
+            const frameNumber = parseInt(frameItem.dataset.frameNumber, 10);
+
+            // Selection Logic
+            frameItem.classList.toggle('selected');
+
+            if (frameItem.classList.contains('selected')) {
+                selectedFrames.add(frameNumber);
+            } else {
+                selectedFrames.delete(frameNumber);
+            }
+            updateSelectionCounter();
+        }
+
+        function handleFrameHover(event) {
+            const frameItem = event.target.closest('.frame-item');
+            if (!frameItem) return;
+
+            const thumbnailUrl = frameItem.querySelector('img').src;
+            hoverPreviewImage.src = thumbnailUrl;
+            
+            hoverPreviewTooltip.classList.remove('hidden');
+            
+            const rect = frameItem.getBoundingClientRect();
+            const tooltip = hoverPreviewTooltip;
+            
+            // Recalculate tooltip size based on its content
+            tooltip.style.left = '-9999px';
+            tooltip.style.top = '-9999px';
+            const tooltipRect = tooltip.getBoundingClientRect();
+
+            const offset = 15;
+
+            let left = rect.right + offset;
+            if (left + tooltipRect.width > window.innerWidth) {
+                left = rect.left - tooltipRect.width - offset;
+            }
+            if (left < 0) {
+                left = offset;
+            }
+
+            let top = rect.top + (rect.height - tooltipRect.height) / 2;
+            if (top < 0) {
+                top = offset;
+            } else if (top + tooltipRect.height > window.innerHeight) {
+                top = window.innerHeight - tooltipRect.height - offset;
+            }
+
+            tooltip.style.left = `${left}px`;
+            tooltip.style.top = `${top}px`;
+        }
+
+        function handleFrameLeave(event) {
+            hoverPreviewTooltip.classList.add('hidden');
+        }
+
+        function toggleSelectAll() {
+            const allFrames = document.querySelectorAll('.frame-item');
+            if (allFrames.length === 0) return;
+
+            const shouldSelectAll = selectedFrames.size < allFrames.length;
+
+            allFrames.forEach(frameItem => {
+                const frameNumber = parseInt(frameItem.dataset.frameNumber, 10);
+                if (shouldSelectAll) {
+                    frameItem.classList.add('selected');
+                    selectedFrames.add(frameNumber);
+                } else {
+                    frameItem.classList.remove('selected');
+                }
+            });
+
+            if (!shouldSelectAll) {
+                selectedFrames.clear();
+            }
+
+            updateSelectionCounter();
+        }
+
+        // Helper function to introduce a delay
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function downloadSelectedFrames() {
+            if (selectedFrames.size === 0) {
+                statusText.textContent = '请至少选择一帧进行下载。';
+                setTimeout(() => {
+                    if (statusText.textContent === '请至少选择一帧进行下载。') {
+                        statusText.textContent = '';
+                    }
+                }, 3000);
+                return;
+            }
+
+            downloadBtn.disabled = true;
+            downloadBtn.textContent = '正在下载...';
+            const originalStatus = statusText.textContent;
+            
+            const baseFileName = videoFile.name.replace(/\.[^/.]+$/, "");
+            const sortedFrames = Array.from(selectedFrames).sort((a, b) => a - b);
+            let downloadedCount = 0;
+
+            statusText.textContent = `准备下载 ${sortedFrames.length} 帧... 浏览器可能会提示您允许多文件下载。`;
+
+            await sleep(1000);
+
+            for (const frameNumber of sortedFrames) {
+                const blob = frameBlobs.get(frameNumber);
+                if (blob) {
+                    try {
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(blob);
+                        const fileName = `${baseFileName}_frame_${String(frameNumber + 1).padStart(5, '0')}.jpg`;
+                        link.download = fileName;
+                        
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        
+                        URL.revokeObjectURL(link.href);
+                        
+                        downloadedCount++;
+                        statusText.textContent = `正在下载: ${downloadedCount} / ${sortedFrames.length}`;
+                        
+                        await sleep(200); 
+                    } catch(e) {
+                        console.error("下载失败:", e);
+                        statusText.textContent = `下载一帧时出错。`;
+                        break;
+                    }
+                }
+            }
+            
+            if(downloadedCount === sortedFrames.length) {
+                statusText.textContent = `下载请求已全部发起！共 ${downloadedCount} 帧。`;
+            }
+
+            downloadBtn.disabled = false;
+            downloadBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z" /><path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" /></svg>
+                    <span>下载</span>`;
+            setTimeout(() => { if(statusText.textContent.includes('发起')) statusText.textContent = originalStatus; }, 4000);
+        }
+        
+        // --- UI and State Helpers ---
+        function resetState(processingStatus) {
+            isProcessing = processingStatus;
+            isPaused = false;
+
+            startBtn.disabled = isProcessing;
+            videoUpload.disabled = isProcessing;
+
+            if (isProcessing) {
+                pauseBtn.classList.remove('hidden');
+                cancelBtn.classList.remove('hidden');
+                startBtn.classList.add('hidden');
+                pauseBtn.disabled = false;
+                cancelBtn.disabled = false;
+                pauseBtn.textContent = '暂停';
+            } else {
+                pauseBtn.classList.add('hidden');
+                cancelBtn.classList.add('hidden');
+                startBtn.classList.remove('hidden');
+                startBtn.disabled = videoFile === null;
+            }
+        }
+        
+        function updateSelectionCounter() {
+            const selectionSize = selectedFrames.size;
+            selectionCounter.textContent = `已选择 ${selectionSize} 帧`;
+            downloadBtn.disabled = selectionSize === 0;
+
+            const allFramesCount = document.querySelectorAll('.frame-item').length;
+            if (allFramesCount > 0 && selectionSize === allFramesCount) {
+                selectAllBtn.textContent = '取消全选';
+            } else {
+                selectAllBtn.textContent = '全选';
+            }
+        }
+    </script>
+</body>
+</html>
+
+
