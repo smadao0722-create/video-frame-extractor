@@ -72,15 +72,19 @@
                 <main class="bg-gray-800 rounded-2xl shadow-2xl p-6 flex-grow flex flex-col">
                     <!-- Upload and Controls -->
                     <div class="flex flex-col sm:flex-row items-center gap-4 mb-6 pb-6 border-b border-gray-700">
-                        <div class="w-full sm:w-auto">
-                            <label for="video-upload" class="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg cursor-pointer transition-colors">
+                        <div class="flex items-center gap-4">
+                            <label for="video-upload" class="flex-shrink-0 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg cursor-pointer transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
                                 <span>选择视频</span>
                             </label>
                             <input type="file" id="video-upload" class="hidden" accept="video/*">
+                            <div class="flex flex-col items-start">
+                                <label for="fps-input" class="text-sm font-medium text-gray-300 mb-1">提取帧率 (FPS)</label>
+                                <input type="number" id="fps-input" value="10" min="1" max="60" class="w-24 bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2">
+                            </div>
                         </div>
                         <div id="file-name" class="text-gray-400 text-sm truncate flex-grow text-center sm:text-left">未选择文件</div>
-                        <div class="flex gap-2 ml-auto">
+                        <div class="flex gap-2 ml-auto flex-shrink-0">
                             <button id="start-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed">开始提取</button>
                             <button id="pause-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed hidden">暂停</button>
                             <button id="cancel-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed hidden">取消</button>
@@ -146,6 +150,7 @@
         // DOM Elements
         const videoUpload = document.getElementById('video-upload');
         const fileNameDisplay = document.getElementById('file-name');
+        const fpsInput = document.getElementById('fps-input');
         const startBtn = document.getElementById('start-btn');
         const pauseBtn = document.getElementById('pause-btn');
         const cancelBtn = document.getElementById('cancel-btn');
@@ -175,285 +180,6 @@
         const selectedFrames = new Set();
         const frameBlobs = new Map();
 
-        // Base64 for the donation QR code image - This is now correct.
-        const donationImageBase64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0AKgAAAAgABQESAAMAAAABAAEAAAEaAAUAAAABAAAASgEbAAUAAAABAAAAUgEoAAMAAAABAAIAAIdpAAQAAAABAAAAWgAAAAAAAABIAAAAAQAAAEgAAAABAAOShgAHAAAAEgAAAHigAgAEAAAAAQAABfSgAwAEAAAAAQAABeYAAAAA/8IAEQgB5gX0AwEiAAIRAQMRAf/EAB8AAAEFAQEBAQEBAAAAAAAAAAABAgMEBQYHCAkKC//EALUQAAIBAwMCBAMFBQQEAAABfQECAwAEEQUSITFBBhNRYQcicRQygZGhCCNCscEVUtHwJDNicoIJChYXGBkaJSYnKCkqNDU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6g4SFhoeIiYqSk5SVlpeYmZqio6Slpqeoqaqys7S1tre4ubrCw8TFxsfIycrS09TV1tfY2drh4uPk5ebn6Onq8fLz9PX29/j5+v/EAB8BAAMBAQEBAQEBAQEAAAAAAAABAgMEBQYHCAkKC//EALURAAIBAgQEAwQHBQQEAAECdwABAgMRBAUhMQYSQVEHYXETIjKBCBRCkaGxwQkjMLwFWJy0QoWJDThJfEXGBkaJicoKSo1Njc4OTpDREVGR0hJSlNUVVZXWFlaY2RlZmdoaWpzdHV2d3h5eoKDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5unp6vLz9PX29/j5+v/bAEMAAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAf/bAEMBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAf/dABEAJf/aAAwDAQACEQMRAD8A9UooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAC-Z";
-        donationQrCode.src = donationImageBase64;
-
-        // Event Listeners
-        videoUpload.addEventListener('change', handleVideoUpload);
-        startBtn.addEventListener('click', startExtraction);
-        pauseBtn.addEventListener('click', togglePause);
-        cancelBtn.addEventListener('click', cancelExtraction);
-        framesContainer.addEventListener('click', handleFrameSelection);
-        framesContainer.addEventListener('mouseover', handleFrameHover);
-        framesContainer.addEventListener('mouseleave', handleFrameLeave);
-        downloadBtn.addEventListener('click', downloadSelectedFrames);
-        selectAllBtn.addEventListener('click', toggleSelectAll);
-
-        // --- Core Functions ---
-
-        function handleVideoUpload(event) {
-            const file = event.target.files[0];
-            if (file && file.type.startsWith('video/')) {
-                framesContainer.innerHTML = '';
-                downloadArea.classList.add('hidden');
-                statusArea.classList.add('hidden');
-                selectedFrames.clear();
-                frameBlobs.clear();
-                
-                videoFile = file;
-                fileNameDisplay.textContent = file.name;
-                startBtn.disabled = false;
-                if (videoObjectUrl) {
-                    URL.revokeObjectURL(videoObjectUrl);
-                }
-                videoObjectUrl = URL.createObjectURL(videoFile);
-                videoProcessor.src = videoObjectUrl;
-            }
-        }
-
-        async function startExtraction() {
-            if (!videoFile || isProcessing) return;
-
-            resetState(true);
-            statusArea.classList.remove('hidden');
-            progressBarContainer.classList.remove('hidden');
-            progressBar.style.width = '0%';
-            statusText.textContent = '正在初始化...';
-            framesContainer.innerHTML = '';
-
-            const runExtractionLogic = async () => {
-                totalFrames = Math.floor(videoProcessor.duration);
-                if (!totalFrames || totalFrames === Infinity) {
-                    statusText.textContent = '无法读取视频时长。请尝试其他视频文件。';
-                    resetState(false);
-                    return;
-                }
-                statusText.textContent = `准备就绪... 共 ${totalFrames} 帧。`;
-
-                for (currentFrame = 0; currentFrame < totalFrames; currentFrame++) {
-                    if (!isProcessing) break; 
-
-                    while (isPaused) {
-                        if (!isProcessing) break;
-                        await sleep(100);
-                    }
-                    if (!isProcessing) break;
-
-                    videoProcessor.currentTime = currentFrame + 0.5;
-                    
-                    await new Promise(resolve => {
-                        videoProcessor.onseeked = async () => {
-                            await sleep(50); 
-                            resolve();
-                        }
-                    });
-
-                    if (!isProcessing) break;
-
-                    canvasProcessor.width = videoProcessor.videoWidth;
-                    canvasProcessor.height = videoProcessor.videoHeight;
-                    ctx.drawImage(videoProcessor, 0, 0, canvasProcessor.width, canvasProcessor.height);
-                    
-                    const blob = await new Promise(resolve => canvasProcessor.toBlob(resolve, 'image/jpeg', 0.9));
-                    if (!isProcessing) break; 
-
-                    frameBlobs.set(currentFrame, blob);
-
-                    const frameUrl = URL.createObjectURL(blob);
-                    const frameElement = document.createElement('div');
-                    frameElement.className = 'frame-item relative aspect-video bg-gray-700 rounded-md overflow-hidden';
-                    frameElement.dataset.frameNumber = currentFrame;
-                    frameElement.innerHTML = `<img src="${frameUrl}" class="w-full h-full object-cover" loading="lazy">`;
-                    framesContainer.appendChild(frameElement);
-
-                    if (downloadArea.classList.contains('hidden')) {
-                        downloadArea.classList.remove('hidden');
-                    }
-
-                    const progress = ((currentFrame + 1) / totalFrames) * 100;
-                    progressBar.style.width = `${progress}%`;
-                    statusText.textContent = `正在提取: ${currentFrame + 1} / ${totalFrames}`;
-                }
-
-                if (isProcessing) { 
-                    statusText.textContent = `提取完成！共提取 ${frameBlobs.size} 帧。`;
-                    progressBarContainer.classList.add('hidden'); 
-                } else {
-                    statusText.textContent = '提取已取消。';
-                }
-                resetState(false);
-            };
-
-            videoProcessor.onerror = () => {
-                statusText.textContent = '加载视频失败。请检查文件格式或选择其他文件。';
-                resetState(false);
-            };
-
-            if (videoProcessor.readyState >= 1) {
-                runExtractionLogic();
-            } else {
-                videoProcessor.onloadedmetadata = runExtractionLogic;
-            }
-        }
-        
-        function togglePause() {
-            isPaused = !isPaused;
-            pauseBtn.textContent = isPaused ? '继续' : '暂停';
-            if (isPaused) {
-                 statusText.textContent = `已暂停在第 ${currentFrame + 1} 帧。`;
-            } else {
-                 statusText.textContent = `正在提取: ${currentFrame + 1} / ${totalFrames}`;
-            }
-        }
-
-        function cancelExtraction() {
-            if (!isProcessing) return;
-            resetState(false);
-            statusText.textContent = '提取已取消。';
-            setTimeout(() => {
-                if(statusText.textContent === '提取已取消。') statusArea.classList.add('hidden');
-            }, 3000);
-        }
-
-        function handleFrameSelection(event) {
-            const frameItem = event.target.closest('.frame-item');
-            if (!frameItem) return;
-            const frameNumber = parseInt(frameItem.dataset.frameNumber, 10);
-            frameItem.classList.toggle('selected');
-            if (frameItem.classList.contains('selected')) {
-                selectedFrames.add(frameNumber);
-            } else {
-                selectedFrames.delete(frameNumber);
-            }
-            updateSelectionCounter();
-        }
-
-        function handleFrameHover(event) {
-            const frameItem = event.target.closest('.frame-item');
-            if (!frameItem) return;
-            const thumbnailUrl = frameItem.querySelector('img').src;
-            hoverPreviewImage.src = thumbnailUrl;
-            hoverPreviewTooltip.classList.remove('hidden');
-            const rect = frameItem.getBoundingClientRect();
-            const tooltip = hoverPreviewTooltip;
-            tooltip.style.left = '-9999px';
-            tooltip.style.top = '-9999px';
-            const tooltipRect = tooltip.getBoundingClientRect();
-            const offset = 15;
-            let left = rect.right + offset;
-            if (left + tooltipRect.width > window.innerWidth) {
-                left = rect.left - tooltipRect.width - offset;
-            }
-            if (left < 0) left = offset;
-            let top = rect.top + (rect.height - tooltipRect.height) / 2;
-            if (top < 0) {
-                top = offset;
-            } else if (top + tooltipRect.height > window.innerHeight) {
-                top = window.innerHeight - tooltipRect.height - offset;
-            }
-            tooltip.style.left = `${left}px`;
-            tooltip.style.top = `${top}px`;
-        }
-
-        function handleFrameLeave(event) {
-            hoverPreviewTooltip.classList.add('hidden');
-        }
-
-        function toggleSelectAll() {
-            const allFrames = document.querySelectorAll('.frame-item');
-            if (allFrames.length === 0) return;
-            const shouldSelectAll = selectedFrames.size < allFrames.length;
-            allFrames.forEach(frameItem => {
-                const frameNumber = parseInt(frameItem.dataset.frameNumber, 10);
-                if (shouldSelectAll) {
-                    frameItem.classList.add('selected');
-                    selectedFrames.add(frameNumber);
-                } else {
-                    frameItem.classList.remove('selected');
-                }
-            });
-            if (!shouldSelectAll) selectedFrames.clear();
-            updateSelectionCounter();
-        }
-
-        function sleep(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-        }
-
-        async function downloadSelectedFrames() {
-            if (selectedFrames.size === 0) {
-                statusText.textContent = '请至少选择一帧进行下载。';
-                setTimeout(() => { if (statusText.textContent === '请至少选择一帧进行下载。') statusText.textContent = ''; }, 3000);
-                return;
-            }
-            downloadBtn.disabled = true;
-            downloadBtn.textContent = '正在下载...';
-            const originalStatus = statusText.textContent;
-            const baseFileName = videoFile.name.replace(/\.[^/.]+$/, "");
-            const sortedFrames = Array.from(selectedFrames).sort((a, b) => a - b);
-            let downloadedCount = 0;
-            statusText.textContent = `准备下载 ${sortedFrames.length} 帧... 浏览器可能会提示您允许多文件下载。`;
-            await sleep(1000);
-            for (const frameNumber of sortedFrames) {
-                const blob = frameBlobs.get(frameNumber);
-                if (blob) {
-                    try {
-                        const link = document.createElement('a');
-                        link.href = URL.createObjectURL(blob);
-                        link.download = `${baseFileName}_frame_${String(frameNumber + 1).padStart(5, '0')}.jpg`;
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                        URL.revokeObjectURL(link.href);
-                        downloadedCount++;
-                        statusText.textContent = `正在下载: ${downloadedCount} / ${sortedFrames.length}`;
-                        await sleep(200); 
-                    } catch(e) {
-                        console.error("下载失败:", e);
-                        statusText.textContent = `下载一帧时出错。`;
-                        break;
-                    }
-                }
-            }
-            if(downloadedCount === sortedFrames.length) statusText.textContent = `下载请求已全部发起！共 ${downloadedCount} 帧。`;
-            downloadBtn.disabled = false;
-            downloadBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z" /><path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" /></svg><span>下载</span>`;
-            setTimeout(() => { if(statusText.textContent.includes('发起')) statusText.textContent = originalStatus; }, 4000);
-        }
-        
-        function resetState(processingStatus) {
-            isProcessing = processingStatus;
-            isPaused = false;
-            startBtn.disabled = isProcessing;
-            videoUpload.disabled = isProcessing;
-            if (isProcessing) {
-                pauseBtn.classList.remove('hidden');
-                cancelBtn.classList.remove('hidden');
-                startBtn.classList.add('hidden');
-                pauseBtn.disabled = false;
-                cancelBtn.disabled = false;
-                pauseBtn.textContent = '暂停';
-            } else {
-                pauseBtn.classList.add('hidden');
-                cancelBtn.classList.add('hidden');
-                startBtn.classList.remove('hidden');
-                startBtn.disabled = videoFile === null;
-            }
-        }
-        
-        function updateSelectionCounter() {
-            const selectionSize = selectedFrames.size;
-            selectionCounter.textContent = `已选择 ${selectionSize} 帧`;
-            downloadBtn.disabled = selectionSize === 0;
-            const allFramesCount = document.querySelectorAll('.frame-item').length;
-            if (allFramesCount > 0 && selectionSize === allFramesCount) {
-                selectAllBtn.textContent = '取消全选';
-            } else {
-                selectAllBtn.textContent = '全选';
-            }
-        }
-    </script>
-</body>
-</html>
+        // --- Your QR Code Data ---
+        const donationImageBase64 = "data:image/jpeg;base64,/9j/4QDKRXhpZgAATU0AKgAAAAgABgESAAMAAAABAAEAAAEaAAUAAAABAAAAVgEbAAUAAAABAAAAXgEoAAMAAAABAAIAAAITAAMAAAABAAEAAIdpAAQAAAABAAAAZgAAAAAAAABIAAAAAQAAAEgAAAABAAeQAAAHAAAABDAyMjGRAQAHAAAABAECAwCgAAAHAAAABDAxMDCgAQADAAAAAQABAACgAgAEAAAAAQAABICgAwAEAAAAAQAABICkBgADAAAAAQAAAAAAAAAAAAD/4gIoSUNDX1BST0ZJTEUAAQEAAAIYYXBwbAQAAABtbnRyUkdCIFhZWiAH5gABAAEAAAAAAABhY3NwQVBQTAAAAABBUFBMAAAAAAAAAAAAAAAAAAAAAAAA9tYAAQAAAADTLWFwcGzs/aOOOIVHw220vU962hgvAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAApkZXNjAAAA/AAAADBjcHJ0AAABLAAAAFB3dHB0AAABfAAAABRyWFlaAAABkAAAABRnWFlaAAABpAAAABRiWFlaAAABuAAAABRyVFJDAAABzAAAACBjaGFkAAAB7AAAACxiVFJDAAABzAAAACBnVFJDAAABzAAAACBtbHVjAAAAAAAAAAEAAAAMZW5VUwAAABQAAAAcAEQAaQBzAHAAbABhAHkAIABQADNtbHVjAAAAAAAAAAEAAAAMZW5VUwAAADQAAAAcAEMAbwBwAHkAcgBpAGcAaAB0ACAAQQBwAHAAbABlACAASQBuAGMALgAsACAAMgAwADIAMlhZWiAAAAAAAAD21QABAAAAANMsWFlaIAAAAAAAAIPfAAA9v////7tYWVogAAAAAAAASr8AALE3AAAKuVhZWiAAAAAAAAAoOAAAEQsAAMi5cGFyYQAAAAAAAwAAAAJmZgAA8qcAAA1ZAAAT0AAACltzZjMyAAAAAAABDEIAAAXe///zJgAAB5MAAP2Q///7ov///aMAAAPcAADAbv/bAIQAAQEBAQEBAgEBAgMCAgIDBAMDAwMEBQQEBAQEBQYFBQUFBQUGBgYGBgYGBgcHBwcHBwgICAgICQkJCQkJCQkJCQEBAQECAgIEAgIECQYFBgkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJ/90ABAAt/8AAEQgCzALMAwEiAAIRAQMRAf/EAaIAAAEFAQEBAQEBAAAAAAAAAAABAgMEBQYHCAkKCxAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6AQADAQEBAQEBAQEBAAAAAAAAAQIDBAUGBwgJCgsRAAIBAgQEAwQHBQQEAAECdwABAgMRBAUhMQYSQVEHYXETIjKBCBRCkaGxwQkjM1LwFWJy0QoWJDThJfEXGBkaJicoKSo1Njc4OTpDREVGR0hJSlNUVVZXWFlaY2RlZmdoaWpzdHV2d3h5eoKDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uLj5OXm5+jp6vLz9PX29/j5+v/aAAwDAQACEQMRAD8A/v4ooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigD/0P7+KKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooA/9H+/iiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAP/S/v4ooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigA
 
